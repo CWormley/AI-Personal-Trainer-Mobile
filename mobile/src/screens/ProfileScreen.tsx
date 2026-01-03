@@ -1,4 +1,20 @@
-import React, { useState } from "react";
+/**
+ * ============================================================================
+ * User Profile Screen
+ * ============================================================================
+ * 
+ * Screen for viewing and editing user profile information.
+ * Features:
+ * - Display user avatar and email
+ * - Edit user name
+ * - View user statistics and preferences
+ * - Sign out functionality
+ * - Profile data persistence
+ * 
+ * @module mobile/src/screens/ProfileScreen
+ */
+
+import React, { useState } from "React";
 import {
   View,
   Text,

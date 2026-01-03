@@ -1,6 +1,30 @@
+/**
+ * ============================================================================
+ * Database Migration Script - Add Role Column to Messages
+ * ============================================================================
+ * 
+ * One-time migration script to add the 'role' column to the Message table.
+ * This column stores whether a message was from a 'user' or 'assistant'.
+ * 
+ * Usage:
+ *   node service/fix_role.js
+ * 
+ * The script:
+ * - Checks if the role column exists
+ * - Adds the column if it doesn't exist
+ * - Defaults all existing messages to 'user' role
+ * - Validates the migration was successful
+ * 
+ * @module service/fix_role.js
+ */
+
 import { PrismaClient } from './generated/prisma/index.js';
+
 const prisma = new PrismaClient();
 
+/**
+ * Check if role column exists and add it if necessary
+ */
 async function fixRole() {
   try {
     // Check if role column exists

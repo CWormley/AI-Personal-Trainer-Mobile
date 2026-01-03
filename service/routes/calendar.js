@@ -1,10 +1,38 @@
+/**
+ * ============================================================================
+ * Calendar Event Management Routes
+ * ============================================================================
+ * 
+ * API endpoints for managing calendar events and scheduling.
+ * 
+ * Features:
+ * - Create calendar events with optional recurrence
+ * - Support for daily, weekly, biweekly, monthly, yearly patterns
+ * - Retrieve events by date or user
+ * - Update and delete events
+ * - Validate date/time input formats
+ * - Integration with AI suggestions
+ * 
+ * @module service/routes/calendar.js
+ */
+
 import express from 'express';
 import { calendarEventService } from '../db/index.js';
 import { authenticateToken } from './auth.js';
 
 const router = express.Router();
 
-// Validation helper for date/time input
+// ============================================================================
+// Helpers
+// ============================================================================
+
+/**
+ * Validate date and time input formats
+ * 
+ * @param {string} date - Date in YYYY-MM-DD format
+ * @param {string} time - Time in HH:mm format (24-hour)
+ * @returns {Array} Array of validation error messages
+ */
 const validateDateTimeInput = (date, time) => {
   const errors = [];
   
@@ -32,7 +60,19 @@ const validateDateTimeInput = (date, time) => {
   return errors;
 };
 
-// GET /api/calendar - Get all calendar events for the user
+// ============================================================================
+// Routes
+// ============================================================================
+
+/**
+ * GET /api/calendar
+ * Retrieve all calendar events for the authenticated user
+ * 
+ * @returns {Array} User's calendar events
+ * @status {200} Events retrieved successfully
+ * @status {401} Unauthorized
+ * @status {500} Server error
+ */
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -42,11 +82,21 @@ router.get('/', authenticateToken, async (req, res) => {
     res.json({ success: true, data: events });
   } catch (error) {
     console.error('Error fetching calendar events:', error);
-    res.status(500).json({ error: 'Failed to fetch calendar events' });
+    res.status(500).json({ error: 'Failed to fetch calendar events', success: false });
   }
 });
 
-// GET /api/calendar/:id - Get specific event
+/**
+ * GET /api/calendar/:id
+ * Retrieve a specific calendar event
+ * 
+ * @param {string} req.params.id - Event ID
+ * 
+ * @returns {Object} Calendar event details
+ * @status {200} Event found
+ * @status {404} Event not found
+ * @status {500} Server error
+ */
 router.get('/:id', async (req, res) => {
   try {
     const event = await calendarEventService.getById(req.params.id);

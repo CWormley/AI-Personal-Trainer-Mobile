@@ -1,3 +1,16 @@
+/**
+ * ============================================================================
+ * Application Navigation Stack
+ * ============================================================================
+ * 
+ * Manages the navigation structure of the application with:
+ * - Conditional authentication stack (SignIn/SignUp)
+ * - Main application stack (Home/Chat/Profile)
+ * - Type-safe route parameters
+ * 
+ * @module mobile/src/navigation/AppNavigator
+ */
+
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -9,6 +22,14 @@ import SignInScreen from '../screens/SignInScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import LoadingScreen from '../screens/LoadingScreen';
 
+// ============================================================================
+// Types
+// ============================================================================
+
+/**
+ * Type-safe route parameters for the root navigation stack
+ * Defines all possible screens and their parameters
+ */
 export type RootStackParamList = {
   Home: undefined;
   Profile: undefined;
@@ -17,8 +38,19 @@ export type RootStackParamList = {
   SignUp: undefined;
 };
 
+// ============================================================================
+// Navigation Stacks
+// ============================================================================
+
 const Stack = createStackNavigator<RootStackParamList>();
 
+/**
+ * Authentication Stack
+ * Displayed when user is not authenticated
+ * Includes: SignIn, SignUp screens
+ * 
+ * @returns Navigation stack for authentication screens
+ */
 const AuthStack = () => (
   <Stack.Navigator 
     screenOptions={{
@@ -30,6 +62,13 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
+/**
+ * Application Stack
+ * Displayed when user is authenticated
+ * Includes: Home, Chat, Profile screens
+ * 
+ * @returns Navigation stack for authenticated screens
+ */
 const AppStack = () => (
   <Stack.Navigator
     screenOptions={{
@@ -42,9 +81,20 @@ const AppStack = () => (
   </Stack.Navigator>
 );
 
+// ============================================================================
+// Main Navigator
+// ============================================================================
+
+/**
+ * Root navigator that switches between Auth and App stacks based on user state
+ * Shows loading screen while checking authentication status
+ * 
+ * @returns The complete navigation structure
+ */
 const AppNavigator: React.FC = () => {
   const { user, isLoading } = useAuth();
 
+  // Show loading screen while checking authentication
   if (isLoading) {
     return <LoadingScreen />;
   }

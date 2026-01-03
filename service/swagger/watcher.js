@@ -1,8 +1,35 @@
 #!/usr/bin/env node
 
 /**
- * Development utility for watching file changes and auto-regenerating Swagger docs
- * Usage: npm run swagger:watch
+ * ============================================================================
+ * Swagger Documentation Auto-Regeneration Watcher
+ * ============================================================================
+ * 
+ * Development utility that monitors file changes and triggers automatic
+ * regeneration of Swagger/OpenAPI documentation when route or schema
+ * files are modified.
+ * 
+ * Purpose:
+ * - Watch Prisma schema and route files for changes
+ * - Automatically trigger documentation regeneration via API endpoint
+ * - Provide visual feedback in console for developer workflow
+ * - Avoid regeneration spam with debouncing (1 second debounce)
+ * 
+ * Usage:
+ * $ npm run swagger:watch
+ * 
+ * Environment:
+ * - PORT: API server port (default: 5000)
+ * - API_BASE_URL: Override server URL (optional)
+ * 
+ * Watched Files:
+ * - prisma/schema.prisma - Database model changes
+ * - routes/**\/*.js - API endpoint changes
+ * - db/**\/*.js - Database service changes
+ * 
+ * @module service/swagger/watcher.js
+ * @requires chokidar - File watching library
+ * @requires node-fetch - HTTP client for regeneration requests
  */
 
 import chokidar from 'chokidar';
@@ -13,10 +40,22 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__dirname); // Go up one level from swagger/ to service/
 
-// Dynamic server URL configuration
+// ============================================================================
+// Configuration
+// ============================================================================
+
+/** API server port */
 const PORT = process.env.PORT || 5000;
+
+/** Server base URL for regeneration endpoint */
 const SERVER_URL = process.env.API_BASE_URL || `http://localhost:${PORT}`;
+
+/** Endpoint to trigger documentation regeneration */
 const REGENERATE_ENDPOINT = `${SERVER_URL}/api-docs/regenerate`;
+
+// ============================================================================
+// File Watching Configuration
+// ============================================================================
 
 // Files to watch for changes
 const watchPaths = [
@@ -30,6 +69,10 @@ console.log('📁 Watching paths:');
 watchPaths.forEach(p => console.log(`   - ${p}`));
 console.log(`🌐 Server URL: ${SERVER_URL}/api-docs\n`);
 
+// ============================================================================
+// File Watcher Setup
+// ============================================================================
+
 // Create file watcher
 const watcher = chokidar.watch(watchPaths, {
   ignored: /node_modules/,
@@ -37,8 +80,19 @@ const watcher = chokidar.watch(watchPaths, {
   ignoreInitial: true
 });
 
+// ============================================================================
+// Debouncing & Regeneration
+// ============================================================================
+
 // Debounce function to avoid too many regenerations
 let regenerateTimeout;
+
+/**
+ * Debounce regeneration to prevent excessive API calls
+ * Waits 1 second after last file change before regenerating
+ * 
+ * @param {string} filePath - Path of the changed file
+ */
 function debounceRegenerate(filePath) {
   clearTimeout(regenerateTimeout);
   regenerateTimeout = setTimeout(() => {
@@ -48,6 +102,7 @@ function debounceRegenerate(filePath) {
 
 // Function to trigger documentation regeneration
 async function regenerateSwaggerDocs(changedFile) {
+
   try {
     console.log(`📝 File changed: ${path.relative(__dirname, changedFile)}`);
     console.log('🔄 Regenerating Swagger documentation...');

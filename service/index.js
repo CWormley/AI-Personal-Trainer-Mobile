@@ -1,46 +1,93 @@
+/**
+ * ============================================================================
+ * AI Personal Trainer Backend API Server
+ * ============================================================================
+ * 
+ * Express.js server providing API endpoints for the AI Personal Trainer
+ * mobile application. Includes authentication, chat, goals, reminders,
+ * calendar, and AI memory management.
+ * 
+ * Environment Variables Required:
+ * - PORT: Server port (default: 5000)
+ * - DATABASE_URL: PostgreSQL connection string
+ * - OPENAI_API_KEY: OpenAI API key for GPT models
+ * - JWT_SECRET: Secret key for JWT token generation
+ * 
+ * @module service/index.js
+ */
+
 import 'dotenv/config';
 import express from "express";
 import cors from "cors";
 import { disconnect } from "./db/index.js";
 import { getSwaggerSpecs, createSwaggerMiddleware, swaggerUi, regenerateSwaggerDocs } from "./swagger.js";
 
-// Import route handlers
+// ============================================================================
+// Route Imports
+// ============================================================================
+
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import messageRoutes from "./routes/messages.js";
 import reminderRoutes from "./routes/reminders.js";
 import aiMemoryRoutes from "./routes/ai-memory.js";
-import chatRoutes from "./routes/chat.js"; // Using real OpenAI with cost optimization
+import chatRoutes from "./routes/chat.js";
 import goalRoutes from "./routes/goals.js";
 import calendarRoutes from "./routes/calendar.js";
+
+// ============================================================================
+// Server Setup
+// ============================================================================
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// ============================================================================
+// Middleware Configuration
+// ============================================================================
+
+/** Enable CORS for all routes */
 app.use(cors());
+
+/** Parse incoming JSON request bodies */
 app.use(express.json());
 
-// Health check route
+// ============================================================================
+// Routes
+// ============================================================================
+
+/**
+ * Health check endpoint
+ * Confirms the API server is running
+ */
 app.get("/", (req, res) => res.send("AI Life Coach API Server running ✅"));
 
-// API routes - REGISTER THESE FIRST
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/messages", messageRoutes);
-app.use("/api/reminders", reminderRoutes);
-app.use("/api/ai-memory", aiMemoryRoutes);
-app.use("/api/chat", chatRoutes);
-app.use("/api/goals", goalRoutes);
-app.use("/api/calendar", calendarRoutes);
+/**
+ * API Routes
+ * Register in order of dependency to ensure proper middleware chain
+ */
+app.use("/api/auth", authRoutes);           // Authentication (login, register, logout)
+app.use("/api/users", userRoutes);          // User profile management
+app.use("/api/messages", messageRoutes);    // Message history
+app.use("/api/reminders", reminderRoutes);  // Reminder management
+app.use("/api/ai-memory", aiMemoryRoutes);  // User context and goals memory
+app.use("/api/chat", chatRoutes);           // Chat with AI coach
+app.use("/api/goals", goalRoutes);          // Goal management
+app.use("/api/calendar", calendarRoutes);   // Calendar events
 
-// Auto-updating Swagger middleware (after routes are registered)
+// ============================================================================
+// Documentation Routes
+// ============================================================================
+
+/** Auto-updating Swagger middleware (after routes are registered) */
 app.use(createSwaggerMiddleware(app));
 
-// Swagger documentation setup
+/**
+ * Swagger UI setup
+ * Serves API documentation at /api-docs
+ */
 let swaggerSetup;
 
-// Swagger documentation routes
 app.use('/api-docs', swaggerUi.serve);
 app.get('/api-docs', async (req, res, next) => {
   try {
@@ -58,14 +105,24 @@ app.get('/api-docs', async (req, res, next) => {
   }
 });
 
-// Force regenerate docs endpoint (useful for development)
+/**
+ * Force regenerate API documentation
+ * Useful during development when routes change
+ */
 app.post('/api-docs/regenerate', (req, res) => {
   regenerateSwaggerDocs();
   swaggerSetup = null; // Reset setup to force regeneration
   res.json({ success: true, message: 'Documentation will be regenerated on next request' });
 });
 
-// Error handling middleware
+// ============================================================================
+// Error Handling Middleware
+// ============================================================================
+
+/**
+ * Global error handler
+ * Catches unhandled errors and returns standardized error response
+ */
 app.use((error, req, res, next) => {
   console.error('Server error:', error);
   res.status(500).json({ 
@@ -74,9 +131,38 @@ app.use((error, req, res, next) => {
   });
 });
 
-// 404 handler
+/**
+ * 404 handler
+ * Catches requests to undefined routes
+ */
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
+});
+
+// ============================================================================
+// Graceful Shutdown
+// ============================================================================
+
+/**
+ * Handle graceful shutdown
+ * Closes database connections and exits cleanly
+ */
+const gracefulShutdown = async () => {
+  console.log('Shutting down gracefully...');
+  await disconnect();
+  process.exit(0);
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+
+// ============================================================================
+// Server Startup
+// ============================================================================
+
+app.listen(PORT, () => {
+  console.log(`🚀 AI Life Coach API Server running on port ${PORT}`);
+  console.log(`📖 API endpoints available at http://localhost:${PORT}/api`);
 });
 
 // Graceful shutdown

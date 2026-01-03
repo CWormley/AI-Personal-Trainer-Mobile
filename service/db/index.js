@@ -1,10 +1,51 @@
+/**
+ * ============================================================================
+ * Database Service Layer
+ * ============================================================================
+ * 
+ * Provides a centralized interface for all database operations using Prisma ORM.
+ * Includes services for managing:
+ * - Users (CRUD operations)
+ * - Messages (chat history)
+ * - Reminders (task reminders)
+ * - Goals (user objectives)
+ * - Calendar Events
+ * - AI Memory (user context and preferences)
+ * 
+ * All operations are async and use Prisma Client for type-safe queries.
+ * 
+ * @module service/db/index.js
+ */
+
 import { PrismaClient } from '../generated/prisma/index.js';
 
+// ============================================================================
+// Database Client
+// ============================================================================
+
+/** Singleton Prisma Client instance */
 const prisma = new PrismaClient();
 
-// User operations
+/**
+ * Disconnect from database (called on server shutdown)
+ */
+export async function disconnect() {
+  await prisma.$disconnect();
+}
+
+// ============================================================================
+// User Service
+// ============================================================================
+
+/**
+ * User service for managing user accounts and profiles
+ */
 export const userService = {
-  // Get all users
+  /**
+   * Get all users from the database
+   * 
+   * @returns {Promise<Array>} Array of all users with related data
+   */
   async getAll() {
     return await prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
@@ -20,7 +61,16 @@ export const userService = {
     });
   },
 
-  // Create a new user
+  /**
+   * Create a new user account
+   * 
+   * @param {Object} userData - User data to create
+   * @param {string} userData.email - User email
+   * @param {string} userData.name - User full name
+   * @param {string} userData.passwordHash - Hashed password
+   * 
+   * @returns {Promise<Object>} Created user object
+   */
   async create(userData) {
     return await prisma.user.create({
       data: {
@@ -36,7 +86,13 @@ export const userService = {
     });
   },
 
-  // Get user by ID
+  /**
+   * Get user by ID
+   * 
+   * @param {string} userId - User ID
+   * 
+   * @returns {Promise<Object>} User object with related data
+   */
   async getById(userId) {
     return await prisma.user.findUnique({
       where: { id: userId },
@@ -54,7 +110,13 @@ export const userService = {
     });
   },
 
-  // Get user by email
+  /**
+   * Get user by email address
+   * 
+   * @param {string} email - User email
+   * 
+   * @returns {Promise<Object>} User object or null if not found
+   */
   async getByEmail(email) {
     return await prisma.user.findUnique({
       where: { email },
@@ -66,7 +128,14 @@ export const userService = {
     });
   },
 
-  // Update user
+  /**
+   * Update user information
+   * 
+   * @param {string} userId - User ID
+   * @param {Object} userData - Data to update
+   * 
+   * @returns {Promise<Object>} Updated user object
+   */
   async update(userId, userData) {
     return await prisma.user.update({
       where: { id: userId },
@@ -74,7 +143,13 @@ export const userService = {
     });
   },
 
-  // Delete user
+  /**
+   * Delete a user and all related data
+   * 
+   * @param {string} userId - User ID
+   * 
+   * @returns {Promise<Object>} Deleted user object
+   */
   async delete(userId) {
     return await prisma.user.delete({
       where: { id: userId },
@@ -82,15 +157,30 @@ export const userService = {
   },
 };
 
-// Message operations
+// ============================================================================
+// Message Service
+// ============================================================================
+
+/**
+ * Message service for managing chat message history
+ */
 export const messageService = {
-  // Create a new message
+  /**
+   * Create a new message
+   * 
+   * @param {Object} messageData - Message to create
+   * @param {string} messageData.text - Message text/content
+   * @param {string} messageData.userId - ID of message owner
+   * @param {string} messageData.role - Role of sender ('user' or 'assistant')
+   * 
+   * @returns {Promise<Object>} Created message object
+   */
   async create(messageData) {
     return await prisma.message.create({
       data: {
         text: messageData.text,
         userId: messageData.userId,
-        role: messageData.role || "user", // Defaults to "user" if not specified
+        role: messageData.role || "user",
       },
       include: {
         user: true,
@@ -98,11 +188,18 @@ export const messageService = {
     });
   },
 
-  // Get messages for a user
+  /**
+   * Get messages for a specific user
+   * 
+   * @param {string} userId - User ID
+   * @param {number} limit - Maximum number of messages to retrieve
+   * 
+   * @returns {Promise<Array>} Array of messages in chronological order
+   */
   async getByUser(userId, limit = 50) {
     return await prisma.message.findMany({
       where: { userId },
-      orderBy: { createdAt: 'asc' }, // Changed to asc so older messages come first (natural conversation order)
+      orderBy: { createdAt: 'asc' },
       take: limit,
       include: {
         user: {
@@ -112,7 +209,15 @@ export const messageService = {
     });
   },
 
-  // Get recent conversation (last N messages)
+  /**
+   * Get recent conversation history (last N messages)
+   * Useful for loading conversation context
+   * 
+   * @param {string} userId - User ID
+   * @param {number} limit - Number of recent messages to fetch
+   * 
+   * @returns {Promise<Array>} Recent messages in reverse chronological order
+   */
   async getConversation(userId, limit = 10) {
     return await prisma.message.findMany({
       where: { userId },
@@ -121,7 +226,13 @@ export const messageService = {
     });
   },
 
-  // Delete message
+  /**
+   * Delete a single message
+   * 
+   * @param {string} messageId - Message ID
+   * 
+   * @returns {Promise<Object>} Deleted message object
+   */
   async delete(messageId) {
     return await prisma.message.delete({
       where: { id: messageId },
@@ -129,9 +240,27 @@ export const messageService = {
   },
 };
 
-// Reminder operations
+// ============================================================================
+// Reminder Service
+// ============================================================================
+
+/**
+ * Reminder service for managing task reminders
+ */
 export const reminderService = {
-  // Create a new reminder
+  /**
+   * Create a new reminder
+   * 
+   * @param {Object} reminderData - Reminder to create
+   * @param {string} reminderData.userId - User ID
+   * @param {string} reminderData.title - Reminder title
+   * @param {Date} reminderData.dueDate - When reminder is due
+   * @param {string} reminderData.repeatType - Repeat pattern (none, daily, weekly, monthly)
+   * @param {Date} reminderData.repeatUntil - When to stop repeating
+   * @param {number} reminderData.interval - Interval for repeating reminders
+   * 
+   * @returns {Promise<Object>} Created reminder object
+   */
   async create(reminderData) {
     return await prisma.reminder.create({
       data: {
@@ -150,7 +279,14 @@ export const reminderService = {
     });
   },
 
-  // Get reminders for a user
+  /**
+   * Get reminders for a user
+   * 
+   * @param {string} userId - User ID
+   * @param {boolean} includeCompleted - Include completed reminders
+   * 
+   * @returns {Promise<Array>} Array of reminders
+   */
   async getByUser(userId, includeCompleted = false) {
     return await prisma.reminder.findMany({
       where: {
@@ -161,7 +297,14 @@ export const reminderService = {
     });
   },
 
-  // Get upcoming reminders (next 7 days)
+  /**
+   * Get upcoming reminders for the next N days
+   * 
+   * @param {string} userId - User ID
+   * @param {number} days - Number of days to look ahead
+   * 
+   * @returns {Promise<Array>} Array of upcoming uncompleted reminders
+   */
   async getUpcoming(userId, days = 7) {
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + days);
@@ -178,7 +321,13 @@ export const reminderService = {
     });
   },
 
-  // Mark reminder as completed
+  /**
+   * Mark a reminder as completed
+   * 
+   * @param {string} reminderId - Reminder ID
+   * 
+   * @returns {Promise<Object>} Updated reminder object
+   */
   async markCompleted(reminderId) {
     return await prisma.reminder.update({
       where: { id: reminderId },
@@ -186,7 +335,14 @@ export const reminderService = {
     });
   },
 
-  // Update reminder
+  /**
+   * Update reminder information
+   * 
+   * @param {string} reminderId - Reminder ID
+   * @param {Object} reminderData - Data to update
+   * 
+   * @returns {Promise<Object>} Updated reminder object
+   */
   async update(reminderId, reminderData) {
     return await prisma.reminder.update({
       where: { id: reminderId },

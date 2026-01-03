@@ -1,13 +1,37 @@
+/**
+ * ============================================================================
+ * Authentication Context & Provider
+ * ============================================================================
+ * 
+ * Manages user authentication state, including:
+ * - User login/signup/logout
+ * - Token management and persistence
+ * - Token validation on app startup
+ * - User profile updates
+ * 
+ * @module mobile/src/context/AuthContext
+ */
+
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SERVICE_URL } from '@env';
 
+// ============================================================================
+// Types
+// ============================================================================
+
+/**
+ * Represents a user in the authentication system
+ */
 interface User {
   id: string;
   email: string;
   name: string;
 }
 
+/**
+ * Type definition for the authentication context
+ */
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -17,23 +41,58 @@ interface AuthContextType {
   updateUser: (updatedUser: Partial<User>) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const STORAGE_KEY = '@user_token';
-const USER_KEY = '@user_data';
-
+/**
+ * Props for AuthProvider component
+ */
 interface AuthProviderProps {
   children: ReactNode;
 }
 
+// ============================================================================
+// Context & Constants
+// ============================================================================
+
+/** React context for authentication */
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/** Local storage key for JWT token */
+const STORAGE_KEY = '@user_token';
+
+/** Local storage key for user profile data */
+const USER_KEY = '@user_data';
+
+// ============================================================================
+// AuthProvider Component
+// ============================================================================
+
+/**
+ * AuthProvider component that wraps the app with authentication functionality
+ * 
+ * Responsibilities:
+ * - Loads auth token and validates it on app startup
+ * - Manages user login/signup/logout
+ * - Persists user session in AsyncStorage
+ * - Provides auth state to child components via context
+ * 
+ * @param props - Component props including children to render
+ * @returns Auth context provider component
+ */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  /**
+   * Check if a stored auth token is valid by validating with the backend
+   * Runs on app startup to restore user session
+   */
   useEffect(() => {
     checkAuthState();
   }, []);
 
+  /**
+   * Validate stored token and restore user session if valid
+   * Clears storage if token is invalid or expired
+   */
   const checkAuthState = async () => {
     try {
       const token = await AsyncStorage.getItem(STORAGE_KEY);
@@ -71,6 +130,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  /**
+   * Authenticate user with email and password
+   * 
+   * @param email - User email address
+   * @param password - User password
+   * @returns Promise<boolean> - true if login successful, false otherwise
+   */
   const signIn = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
@@ -112,13 +178,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Sign in error message:', (error as Error).message);
       console.error('Sign in error code:', error.code || 'no code');
       console.error('Sign in error name:', error.name || 'unnamed error');
-      console.error('Sign in full error:', JSON.stringify(error));
       return false;
     } finally {
       setIsLoading(false);
     }
   };
 
+  /**
+   * Register a new user account
+   * 
+   * @param email - Email address for the new account
+   * @param password - Password for the new account
+   * @param name - Full name of the user
+   * @returns Promise<boolean> - true if signup successful, false otherwise
+   */
   const signUp = async (email: string, password: string, name: string): Promise<boolean> => {
     try {
       setIsLoading(true);
@@ -156,14 +229,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Sign up network error:', error);
       console.error('Sign up error message:', (error as Error).message);
       console.error('Sign up error code:', error.code || 'no code');
-      console.error('Sign up error name:', error.name || 'unnamed error');
-      console.error('Sign up full error:', JSON.stringify(error));
       return false;
     } finally {
       setIsLoading(false);
     }
   };
 
+  /**
+   * Sign out the current user
+   * Clears token and user data from local storage
+   */
   const signOut = async (): Promise<void> => {
     try {
       const token = await AsyncStorage.getItem(STORAGE_KEY);
@@ -191,6 +266,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  /**
+   * Update the current user's profile information
+   * 
+   * @param updatedUser - Partial user object with fields to update
+   */
   const updateUser = (updatedUser: Partial<User>) => {
     if (user) {
       const newUser = { ...user, ...updatedUser };
@@ -201,6 +281,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
     }
   };
+
+  // ========================================================================
+  // Provide Context
+  // ========================================================================
 
   const value: AuthContextType = {
     user,
@@ -214,6 +298,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+// ============================================================================
+// useAuth Hook
+// ============================================================================
+
+/**
+ * Custom hook to access authentication context
+ * Must be used within an AuthProvider
+ * 
+ * @returns Authentication context value
+ * @throws Error if used outside of AuthProvider
+ */
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {

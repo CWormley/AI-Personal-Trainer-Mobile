@@ -1,3 +1,19 @@
+/**
+ * ============================================================================
+ * Sign In Screen
+ * ============================================================================
+ * 
+ * Authentication screen for existing users to log in.
+ * Features:
+ * - Email and password input fields
+ * - Form validation
+ * - Error handling with alerts
+ * - Navigation to Sign Up screen
+ * - Demo credentials display for testing
+ * 
+ * @module mobile/src/screens/SignInScreen
+ */
+
 import React, { useState } from 'react';
 import {
   View,

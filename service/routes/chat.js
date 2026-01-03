@@ -1,3 +1,56 @@
+/**
+ * ============================================================================
+ * AI Chat Route - Real-time AI Coach Integration
+ * ============================================================================
+ * 
+ * Handles real-time chat interactions with OpenAI-powered AI coach.
+ * Integrates conversation history, user context, and cost optimization
+ * strategies to provide personalized coaching responses.
+ * 
+ * Core Features:
+ * - Real-time chat messaging with OpenAI GPT models
+ * - Intelligent conversation history tracking (up to 10 previous messages)
+ * - User context integration (goals, preferences, summaries from AI memory)
+ * - Onboarding flow handling with structured responses
+ * - Smart response suggestion generation
+ * - Comprehensive cost optimization:
+ *   * Response caching to avoid duplicate API calls
+ *   * Dynamic model selection (gpt-4o-mini for simple, gpt-4o for complex)
+ *   * Token usage tracking and limiting
+ *   * Maximum token constraints per request
+ * - Full authentication via JWT tokens
+ * 
+ * AI Coach Capabilities:
+ * - Personalized fitness guidance based on user goals
+ * - Workout recommendations with exercise details
+ * - Nutrition and diet advice
+ * - Motivation and accountability messaging
+ * - Progress tracking and celebration
+ * - Question answering on fitness topics
+ * 
+ * Cost Optimization Strategy:
+ * 1. Cache responses for identical user queries
+ * 2. Select cheaper model (gpt-3.5-turbo) for simple queries
+ * 3. Use advanced model (gpt-4o) only for complex reasoning
+ * 4. Limit tokens per request (default: 500-1000 tokens)
+ * 5. Track cumulative token usage per user session
+ * 
+ * Endpoints:
+ * - POST /chat - Send message to AI coach (requires authentication)
+ * - POST /chat/suggestions - Get response suggestions for user input
+ * - GET /chat/history - Get conversation history
+ * - DELETE /chat/:id - Delete specific message
+ * 
+ * Authentication:
+ * All endpoints require valid JWT token in Authorization header
+ * Token must be obtained via /auth/login or /auth/register endpoints
+ * 
+ * @module service/routes/chat.js
+ * @requires express - HTTP server framework
+ * @requires ../db/index.js - Database services for messages and memory
+ * @requires ../LLM/aiService.js - OpenAI integration and cost optimization
+ */
+
 import express from 'express';
 import { messageService, aiMemoryService } from '../db/index.js';
 import { authenticateToken } from './auth.js';
@@ -13,13 +66,29 @@ import {
 
 const router = express.Router();
 
+// ============================================================================
+// Configuration & Environment
+// ============================================================================
+
 // Check for required environment variables
 if (!process.env.OPENAI_API_KEY) {
   console.warn('⚠️ OPENAI_API_KEY not set in environment');
 }
 
+// ============================================================================
+// Helper Functions - Conversation & Context
+// ============================================================================
+
 /**
  * Get conversation history from database
+ * Retrieves the most recent messages for context window
+ * 
+ * @param {string} userId - User identifier
+ * @param {number} limit - Maximum number of messages to retrieve (default: 10)
+ * @returns {Promise<Array>} Array of messages with role and content
+ * @example
+ * const history = await getConversationHistory('user123', 5);
+ * // Returns: [{ role: 'user', content: '...' }, { role: 'assistant', content: '...' }]
  */
 async function getConversationHistory(userId, limit = 10) {
   const messages = await messageService.getConversation(userId, limit);
@@ -31,6 +100,14 @@ async function getConversationHistory(userId, limit = 10) {
 
 /**
  * Get user context from AI memory
+ * Retrieves stored information about user goals, preferences, and summary
+ * This context is included in the system prompt for personalized responses
+ * 
+ * @param {string} userId - User identifier
+ * @returns {Promise<string>} Formatted context string with goals, preferences
+ * @example
+ * const context = await getUserContext('user123');
+ * // Returns: "Summary: Weight loss focused\nGoals: Lose 20lbs\nPreferences: ..."
  */
 async function getUserContext(userId) {
   try {
@@ -51,6 +128,14 @@ async function getUserContext(userId) {
 
 /**
  * Retrieve relevant memories from vector store (optional feature)
+ * Currently a placeholder for future Qdrant integration
+ * Will enable semantic search of user memories for personalized responses
+ * 
+ * @param {string} userId - User identifier
+ * @param {string} query - Search query for relevant memories
+ * @param {number} limit - Maximum number of memories to retrieve (default: 3)
+ * @returns {Promise<string>} Formatted string of relevant memories
+ * @future Implement with @langchain/qdrant for vector similarity search
  */
 async function getRelevantMemories(userId, query, limit = 3) {
   try {
@@ -65,7 +150,21 @@ async function getRelevantMemories(userId, query, limit = 3) {
 
 /**
  * Generate AI response using conversation history and context
- * Implements cost optimization: caching, model selection, max tokens
+ * Implements comprehensive cost optimization strategies
+ * 
+ * Cost Optimization:
+ * 1. CACHE: Check for cached responses first
+ * 2. MODEL SELECTION: Choose model based on query complexity
+ * 3. TOKEN LIMITING: Set maximum tokens to prevent runaway costs
+ * 4. TRACKING: Monitor cumulative token usage
+ * 
+ * @param {string} userId - User identifier
+ * @param {string} userMessage - User's input message
+ * @returns {Promise<Object>} Response with text, tokens used, model used
+ * @throws {Error} If OpenAI API call fails
+ * @example
+ * const response = await generateChatResponse('user123', 'How should I train?');
+ * // Returns: { text: "...", tokensUsed: 150, modelUsed: "gpt-3.5-turbo" }
  */
 async function generateChatResponse(userId, userMessage) {
   try {
@@ -78,6 +177,7 @@ async function generateChatResponse(userId, userMessage) {
     // COST OPTIMIZATION 2: Select model based on task complexity
     const modelType = selectModelForTask(userMessage);
     const model = modelType === 'cheap' ? getCheapLLM() : getLLM();
+
     console.log(`🤖 Using model: ${modelType === 'cheap' ? 'gpt-3.5-turbo (cheap)' : 'gpt-4o-mini'}`);
     
     // Get conversation history

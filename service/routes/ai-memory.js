@@ -1,9 +1,44 @@
+/**
+ * ============================================================================
+ * AI Memory Management Routes
+ * ============================================================================
+ * 
+ * API endpoints for managing user context and long-term memory for the AI coach.
+ * 
+ * Features:
+ * - Store and retrieve user profile summary
+ * - Manage user goals and preferences
+ * - Update AI memory with new learnings
+ * - Support for embedding integration with vector store (Qdrant)
+ * 
+ * The AI memory system allows the coach to:
+ * - Remember past conversations
+ * - Track user preferences and communication style
+ * - Store actionable goals for follow-up
+ * 
+ * @module service/routes/ai-memory.js
+ */
+
 import express from 'express';
 import { aiMemoryService } from '../db/index.js';
 
 const router = express.Router();
 
-// GET /api/ai-memory/:userId - Get AI memory for a user
+// ============================================================================
+// Routes
+// ============================================================================
+
+/**
+ * GET /api/ai-memory/:userId
+ * Retrieve AI memory and user context for a specific user
+ * 
+ * @param {string} req.params.userId - User ID
+ * 
+ * @returns {Object} User memory including summary, goals, and preferences
+ * @status {200} Memory retrieved successfully
+ * @status {404} Memory not found for user
+ * @status {500} Server error
+ */
 router.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -11,17 +46,35 @@ router.get('/:userId', async (req, res) => {
     const memory = await aiMemoryService.getByUser(userId);
     
     if (!memory) {
-      return res.status(404).json({ error: 'AI memory not found for this user' });
+      return res.status(404).json({ 
+        error: 'AI memory not found for this user',
+        success: false 
+      });
     }
     
     res.json({ success: true, data: memory });
   } catch (error) {
     console.error('Error fetching AI memory:', error);
-    res.status(500).json({ error: 'Failed to fetch AI memory' });
+    res.status(500).json({ error: 'Failed to fetch AI memory', success: false });
   }
 });
 
-// POST /api/ai-memory/:userId - Create or update AI memory
+/**
+ * POST /api/ai-memory/:userId
+ * Create or update AI memory for a user
+ * 
+ * @param {string} req.params.userId - User ID
+ * @param {Object} req.body - Memory data to store
+ * @param {string} req.body.summary - User profile summary (e.g., "Active, goal-oriented")
+ * @param {Array} req.body.goals - User goals (e.g., ["fitness", "learning"])
+ * @param {Object} req.body.preferences - Communication preferences
+ * 
+ * @returns {Object} Stored memory object
+ * @status {200} Memory updated successfully
+ * @status {400} Validation error
+ * @status {404} User not found
+ * @status {500} Server error
+ */
 router.post('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -39,14 +92,17 @@ router.post('/:userId', async (req, res) => {
     
     // Handle specific error cases
     if (error.message.includes('User with ID') && error.message.includes('not found')) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: 'User not found', success: false });
     }
     
     if (error.code === 'P2003') {
-      return res.status(400).json({ error: 'Invalid user ID - user does not exist' });
+      return res.status(400).json({ 
+        error: 'Invalid user ID - user does not exist',
+        success: false 
+      });
     }
     
-    res.status(500).json({ error: 'Failed to update AI memory' });
+    res.status(500).json({ error: 'Failed to update AI memory', success: false });
   }
 });
 

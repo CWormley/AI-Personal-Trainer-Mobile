@@ -1,10 +1,34 @@
+/**
+ * ============================================================================
+ * Mock Chat Routes (For Testing & Development)
+ * ============================================================================
+ * 
+ * Provides mock AI responses for development and testing without using
+ * actual OpenAI API calls. Useful for:
+ * - Frontend development and testing
+ * - Reducing API costs during development
+ * - Load testing and performance testing
+ * - Demonstration purposes
+ * 
+ * WARNING: Do not use in production. Use chat.js for real AI responses.
+ * 
+ * @module service/routes/chat-mock.js
+ */
+
 import express from 'express';
 import { messageService, aiMemoryService } from '../db/index.js';
 import { authenticateToken } from './auth.js';
 
 const router = express.Router();
 
-// Mock AI responses for testing
+// ============================================================================
+// Mock Data
+// ============================================================================
+
+/**
+ * Mock AI responses for development
+ * These simulate realistic coach responses without API calls
+ */
 const mockResponses = [
   "That's a great question! Based on your goals and preferences, here's what I recommend...",
   "I appreciate you sharing that with me. Let me help you think through this systematically.",
@@ -13,6 +37,10 @@ const mockResponses = [
   "Your consistency with this practice will really pay off. Have you considered...",
   "That's excellent progress! How are you feeling about the changes so far?",
 ];
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
 
 /**
  * Get conversation history from database

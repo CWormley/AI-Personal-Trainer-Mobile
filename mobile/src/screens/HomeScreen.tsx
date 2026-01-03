@@ -1,3 +1,24 @@
+/**
+ * ============================================================================
+ * Home Screen
+ * ============================================================================
+ * 
+ * Main dashboard screen displaying:
+ * - Daily and long-term goals progress
+ * - Calendar view with events
+ * - Fitness metrics and statistics
+ * - Quick action buttons for navigation
+ * - AI suggestions for goals and events
+ * 
+ * Features:
+ * - Pull-to-refresh goal and event loading
+ * - Calendar navigation
+ * - Goal completion tracking
+ * - Real-time data syncing with backend
+ * 
+ * @module mobile/src/screens/HomeScreen
+ */
+
 import React, { useEffect, useState } from "react";
 import {
   View,

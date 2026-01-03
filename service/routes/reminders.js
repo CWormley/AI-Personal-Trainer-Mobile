@@ -1,9 +1,41 @@
+/**
+ * ============================================================================
+ * Reminder Management Routes
+ * ============================================================================
+ * 
+ * API endpoints for managing user reminders and task notifications.
+ * 
+ * Features:
+ * - Create recurring and one-time reminders
+ * - Retrieve reminders by status (completed/pending)
+ * - Get upcoming reminders for notifications
+ * - Update reminder status
+ * - Delete reminders
+ * - Support for recurring patterns (daily, weekly, monthly)
+ * 
+ * @module service/routes/reminders.js
+ */
+
 import express from 'express';
 import { reminderService } from '../db/index.js';
 
 const router = express.Router();
 
-// GET /api/reminders/user/:userId - Get reminders for a user
+// ============================================================================
+// Routes
+// ============================================================================
+
+/**
+ * GET /api/reminders/user/:userId
+ * Retrieve reminders for a user with optional completion filter
+ * 
+ * @param {string} req.params.userId - User ID
+ * @param {boolean} req.query.includeCompleted - Include completed reminders (default: false)
+ * 
+ * @returns {Array} Array of reminders
+ * @status {200} Reminders retrieved successfully
+ * @status {500} Server error
+ */
 router.get('/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -13,11 +45,21 @@ router.get('/user/:userId', async (req, res) => {
     res.json({ success: true, data: reminders });
   } catch (error) {
     console.error('Error fetching reminders:', error);
-    res.status(500).json({ error: 'Failed to fetch reminders' });
+    res.status(500).json({ error: 'Failed to fetch reminders', success: false });
   }
 });
 
-// GET /api/reminders/upcoming/:userId - Get upcoming reminders
+/**
+ * GET /api/reminders/upcoming/:userId
+ * Retrieve upcoming reminders for push notifications
+ * 
+ * @param {string} req.params.userId - User ID
+ * @param {number} req.query.days - Days ahead to check (default: 7)
+ * 
+ * @returns {Array} Array of upcoming reminders
+ * @status {200} Reminders retrieved successfully
+ * @status {500} Server error
+ */
 router.get('/upcoming/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -27,18 +69,35 @@ router.get('/upcoming/:userId', async (req, res) => {
     res.json({ success: true, data: reminders });
   } catch (error) {
     console.error('Error fetching upcoming reminders:', error);
-    res.status(500).json({ error: 'Failed to fetch upcoming reminders' });
+    res.status(500).json({ error: 'Failed to fetch upcoming reminders', success: false });
   }
 });
 
-// POST /api/reminders - Create new reminder
+/**
+ * POST /api/reminders
+ * Create a new reminder
+ * 
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.userId - User ID (required)
+ * @param {string} req.body.title - Reminder title (required)
+ * @param {Date} req.body.dueDate - When reminder is due (required)
+ * @param {string} req.body.repeatType - Repeat pattern: 'none', 'daily', 'weekly', 'monthly'
+ * @param {Date} req.body.repeatUntil - When to stop repeating
+ * @param {number} req.body.interval - Interval for repeating
+ * 
+ * @returns {Object} Created reminder object
+ * @status {201} Reminder created successfully
+ * @status {400} Validation error
+ * @status {500} Server error
+ */
 router.post('/', async (req, res) => {
   try {
     const { userId, title, dueDate, repeatType, repeatUntil, interval } = req.body;
     
     if (!userId || !title || !dueDate) {
       return res.status(400).json({ 
-        error: 'userId, title, and dueDate are required' 
+        error: 'userId, title, and dueDate are required',
+        success: false 
       });
     }
     

@@ -1,3 +1,21 @@
+/**
+ * ============================================================================
+ * AI Language Model Service
+ * ============================================================================
+ * 
+ * Provides access to OpenAI language models with cost optimization features.
+ * \n * Models Used:
+ * - gpt-4o-mini: Primary model for quality responses ($0.15/$0.60 per 1M tokens)
+ * - gpt-3.5-turbo: Budget model for simple tasks (10x cheaper)
+ * \n * Features:
+ * - Singleton pattern for model instances
+ * - Response caching (24 hour TTL)
+ * - Smart model selection based on task complexity
+ * - Token usage tracking
+ * - Max token limits to prevent expensive responses
+ * \n * @module service/LLM/aiService.js
+ */
+
 import { ChatOpenAI } from "@langchain/openai";
 import { OpenAIEmbeddings } from "@langchain/openai";
 

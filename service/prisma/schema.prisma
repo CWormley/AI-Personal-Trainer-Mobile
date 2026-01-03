@@ -1,3 +1,68 @@
+/**
+ * ============================================================================
+ * Prisma Database Schema
+ * ============================================================================
+ * 
+ * Defines the complete data model for the AI Personal Trainer application.
+ * Uses PostgreSQL as the primary database provider.
+ * 
+ * Database Setup:
+ * - Provider: PostgreSQL (configured via DATABASE_URL environment variable)
+ * - Client Output: ../generated/prisma (auto-generated Prisma Client)
+ * 
+ * Models Overview:
+ * 
+ * User - Core user entity
+ * - id: Unique identifier (CUID format)
+ * - email: Unique email address
+ * - name: Optional user display name
+ * - passwordHash: Bcrypt hashed password
+ * - Relations: messages, reminders, goals, calendarEvents, aiMemory
+ * 
+ * Message - Chat message history
+ * - id: Unique identifier (UUID)
+ * - text: Message content
+ * - role: "user" or "assistant" for conversation tracking
+ * - userId: Foreign key to User
+ * - Indexed for fast conversation retrieval
+ * 
+ * Reminder - Task reminders and notifications
+ * - id: Unique identifier
+ * - title, description: Reminder content
+ * - dueDate, dueTime: When reminder is due
+ * - recurrence: Pattern for recurring reminders
+ * - completed: Completion tracking
+ * 
+ * Goal - User fitness and personal goals
+ * - id: Unique identifier
+ * - type: "daily" or "long_term" goal classification
+ * - status: "active", "completed", or "archived"
+ * - priority: Importance level for prioritization
+ * 
+ * CalendarEvent - Scheduled workouts and appointments
+ * - id: Unique identifier
+ * - title, description: Event details
+ * - startTime, endTime: Event scheduling
+ * - type: "workout", "appointment", "class", etc.
+ * - recurrence: Recurring event patterns
+ * 
+ * AIMemory - Persistent context for AI coach
+ * - id: Unique identifier
+ * - userId: 1:1 relation with User
+ * - summary: High-level user profile summary
+ * - goals: Parsed goals array
+ * - preferences: User preferences for coaching
+ * 
+ * Usage:
+ * $ npx prisma migrate dev
+ * $ npx prisma generate
+ * $ npx prisma db seed
+ * 
+ * @schema service/prisma/schema.prisma
+ * @provider PostgreSQL
+ * @docs https://www.prisma.io/docs/concepts/components/prisma-schema
+ */
+
 // This is your Prisma schema file
 // Learn more: https://pris.ly/d/prisma-schema
 
@@ -10,6 +75,10 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// ============================================================================
+// Data Models
+// ============================================================================
 
 // ---------- MODELS ----------
 

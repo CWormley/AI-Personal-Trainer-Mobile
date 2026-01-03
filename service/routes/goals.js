@@ -1,3 +1,20 @@
+/**
+ * ============================================================================
+ * Goal Management Routes
+ * ============================================================================
+ * 
+ * API endpoints for managing user goals (daily and long-term objectives).
+ * \n * Features:
+ * - Create, read, update, delete goals
+ * - Goal categorization (daily/long-term)
+ * - Priority levels and completion tracking
+ * - Goal filtering by type and status
+ * \n * Goal Types:
+ * - daily: Recurring daily goals that reset each day
+ * - longterm: Long-term objectives tracked over time
+ * \n * @module service/routes/goals.js
+ */
+
 import express from 'express';
 import { goalService } from '../db/index.js';
 import { authenticateToken } from './auth.js';

@@ -1,14 +1,48 @@
+/**
+ * ============================================================================
+ * Swagger API Documentation Generator
+ * ============================================================================
+ * 
+ * Automatically generates Swagger/OpenAPI documentation from Express routes.
+ * 
+ * Features:
+ * - Caches specifications for performance (5 min cache in production)
+ * - Auto-regenerates in development for fresh documentation
+ * - Integrates with Prisma schema for database documentation
+ * - Provides interactive Swagger UI for API testing
+ * - Automatic route discovery from Express app
+ * 
+ * @module service/swagger.js
+ */
+
 import swaggerUi from 'swagger-ui-express';
 import SwaggerGenerator from './swagger/generator.js';
 import { PrismaClient } from './generated/prisma/index.js';
 
+// ============================================================================
+// Configuration & Cache
+// ============================================================================
+
+/** Cached Swagger specifications */
 let cachedSpecs = null;
+
+/** Timestamp of last generation */
 let lastGenerated = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+/** Cache duration in milliseconds (5 minutes) */
+const CACHE_DURATION = 5 * 60 * 1000;
+
+// ============================================================================
+// Functions
+// ============================================================================
 
 /**
- * Get Swagger specifications with caching
- * Automatically regenerates docs when cache expires or in development
+ * Get Swagger specifications with intelligent caching
+ * - In development: Always regenerate for fresh documentation
+ * - In production: Cache for 5 minutes
+ * 
+ * @param {Express.Application} app - Express app instance
+ * @returns {Promise<Object>} Swagger specification object
  */
 export async function getSwaggerSpecs(app) {
   const now = Date.now();

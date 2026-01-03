@@ -1,4 +1,23 @@
-import React, { useState, useEffect, useRef } from "react";
+/**
+ * ============================================================================
+ * Chat Screen\n * ============================================================================
+ * \n * Real-time chat interface with AI Personal Trainer (Life Coach).
+ * \n * Features:
+ * - Two-way messaging with AI coach
+ * - Conversation history loading
+ * - Real-time message updates
+ * - AI suggestions for goals and calendar events
+ * - Onboarding flow for new users
+ * - Cost optimization with smart model selection
+ * \n * The AI coach:
+ * - Remembers past conversations
+ * - Suggests actionable goals
+ * - Provides personalized motivation
+ * - Integrates with calendar and goals systems
+ * \n * @module mobile/src/screens/ChatScreen
+ */
+
+import React, { useState, useEffect, useRef } from "React";
 import {
   View,
   Text,

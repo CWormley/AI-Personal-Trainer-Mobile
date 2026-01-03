@@ -1,3 +1,28 @@
+/**
+ * ============================================================================
+ * Swagger/OpenAPI Specification Generator
+ * ============================================================================
+ * 
+ * Automatically generates complete OpenAPI 3.0 specification from:
+ * - Prisma database schema (models, relationships, field definitions)
+ * - Express route definitions (methods, paths, middleware)
+ * - Environment configurations (servers, base URLs)
+ * 
+ * Features:
+ * - Discovers all API endpoints from Express application
+ * - Generates schema definitions from Prisma models
+ * - Extracts parameters, request/response bodies from route handlers
+ * - Automatically creates endpoint documentation
+ * - Supports multiple environment server configurations
+ * - Generates component schemas for reusable types
+ * 
+ * The generated documentation is automatically included in Swagger UI
+ * and can be accessed at /api-docs endpoint for interactive API testing.
+ * 
+ * @module service/swagger/generator.js
+ * @class SwaggerGenerator
+ */
+
 import listEndpoints from 'express-list-endpoints';
 import fs from 'fs';
 import path from 'path';
@@ -5,8 +30,9 @@ import path from 'path';
 /**
  * Automated Swagger Documentation Generator
  * This class automatically generates Swagger documentation from:
- * 1. Prisma schema models
- * 2. Express route definitions
+ * 1. Prisma schema models (generates component schemas)
+ * 2. Express route definitions (extracts paths, methods, parameters)
+ * 3. Environment configuration (server URLs)
  */
 class SwaggerGenerator {
   constructor(app, prismaClient) {

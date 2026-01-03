@@ -1,3 +1,18 @@
+/**
+ * ============================================================================
+ * Sign Up Screen
+ * ============================================================================
+ * 
+ * User registration screen for creating new accounts.
+ * Features:
+ * - Name, email, and password input fields
+ * - Password confirmation validation
+ * - Form validation with helpful error messages
+ * - Navigation to Sign In screen
+ * 
+ * @module mobile/src/screens/SignUpScreen
+ */
+
 import React, { useState } from 'react';
 import {
   View,
